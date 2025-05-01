@@ -4,7 +4,7 @@
 # - Applies a kube-hunter job manifest.
 # - Waits for the job to complete.
 # - Fetches the job logs (the report).
-# - Uploads the logs to a specified AWS S3 bucket.
+# - Uploads the logs to a specified AWS S3 bucket as a .txt file.
 # - Deletes the job afterwards.
 # - Includes basic error handling and AWS checks.
 
@@ -105,12 +105,13 @@ if ! kubectl wait --for=condition=complete "job/${JOB_NAME}" -n "${NAMESPACE}" -
     if [ -s "${TEMP_LOG_FILE}" ]; then # Check if log file is not empty
         CURRENT_DATE=$(date +'%Y-%m-%d')
         CURRENT_TIME=$(date +'%H%M%S')
-        S3_PATH="s3://${S3_BUCKET_NAME}/${S3_BASE_FOLDER}/${CURRENT_DATE}/${CURRENT_TIME}/FAILED_${JOB_NAME}_report.log"
-        echo "Attempting to upload failure log to ${S3_PATH}..."
+        # *** CHANGED EXTENSION TO .txt ***
+        S3_PATH="s3://${S3_BUCKET_NAME}/${S3_BASE_FOLDER}/${CURRENT_DATE}/${CURRENT_TIME}/FAILED_${JOB_NAME}_report.txt"
+        echo "Attempting to upload failure report to ${S3_PATH}..."
         if aws s3 cp "${TEMP_LOG_FILE}" "${S3_PATH}" --region "${AWS_REGION}"; then
-            echo "[OK] Failure log uploaded to S3."
+            echo "[OK] Failure report uploaded to S3."
         else
-            echo "[WARN] Failed to upload failure log to S3."
+            echo "[WARN] Failed to upload failure report to S3."
         fi
     else
         echo "[INFO] No logs captured for failed/incomplete job, skipping S3 upload."
@@ -158,7 +159,8 @@ else
     # Prepare S3 destination path
     CURRENT_DATE=$(date +'%Y-%m-%d')
     CURRENT_TIME=$(date +'%H%M%S')
-    S3_REPORT_FILENAME="${JOB_NAME}_report_${CURRENT_DATE}_${CURRENT_TIME}.log"
+    # *** CHANGED EXTENSION TO .txt ***
+    S3_REPORT_FILENAME="${JOB_NAME}_report_${CURRENT_DATE}_${CURRENT_TIME}.txt"
     S3_DESTINATION_PATH="s3://${S3_BUCKET_NAME}/${S3_BASE_FOLDER}/${CURRENT_DATE}/${CURRENT_TIME}/${S3_REPORT_FILENAME}"
 
     echo "Uploading report to: ${S3_DESTINATION_PATH}"
