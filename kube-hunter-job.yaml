@@ -1,0 +1,36 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # Name for the Job resource
+  name: kube-hunter-scan-job
+  # We'll run this in the 'default' namespace
+  namespace: default
+spec:
+  # Controls how the Job's pod is created
+  template:
+    metadata:
+      labels:
+        app: kube-hunter # Label to easily find the pod
+    spec:
+      containers:
+      - name: kube-hunter
+        image: aquasec/kube-hunter # Official image
+        # Run in passive, pod-scanning mode
+        command: ["kube-hunter"]
+        args: ["--pod"]
+        resources: # Optional resource requests/limits
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+          requests:
+            memory: "64Mi"
+            cpu: "250m"
+      # Use the default service account in the 'default' namespace
+      # serviceAccountName: default
+      # Pods created by a Job should not restart automatically
+      restartPolicy: Never
+  # Limit retries if the pod fails initially
+  backoffLimit: 1
+  # Automatically clean up the Job and its Pod after ~1 hour (3600s)
+  # Useful so you don't have to manually delete later
+  ttlSecondsAfterFinished: 3600
